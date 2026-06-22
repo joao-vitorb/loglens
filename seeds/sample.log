@@ -1,0 +1,10 @@
+2026-06-20T08:00:01 INFO auth-service Service started
+2026-06-20T08:01:12 INFO auth-service User 42 logged in
+2026-06-20T08:02:33 WARN auth-service Token will expire soon for user 42
+2026-06-20T08:03:05 ERROR auth-service Login failed for user 17
+2026-06-20T08:03:09 ERROR auth-service Login failed for user 17
+2026-06-20T08:04:21 ERROR payment-service Payment gateway timeout
+2026-06-20T08:05:00 INFO payment-service Retrying payment for order 9001
+2026-06-20T08:05:44 WARN payment-service High latency detected
+2026-06-20T08:06:10 ERROR payment-service Payment gateway timeout
+2026-06-20T08:07:55 INFO billing-service Invoice 5567 generated

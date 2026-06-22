@@ -22,7 +22,9 @@ swagger_config = {
             "route": "/apispec.json",
         }
     ],
-    "specs_route": "/docs",
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/docs/",
 }
 
 
