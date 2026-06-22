@@ -17,6 +17,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.config["SETTINGS"] = settings
     app.config["DEBUG"] = settings.debug
     app.config["SQLALCHEMY_DATABASE_URI"] = settings.database_url
+    app.config["MAX_CONTENT_LENGTH"] = settings.max_upload_bytes
 
     db.init_app(app)
     init_swagger(app)

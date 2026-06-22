@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
     database_url: str = "sqlite:///loglens.db"
+    max_upload_bytes: int = 5 * 1024 * 1024
 
 
 @lru_cache

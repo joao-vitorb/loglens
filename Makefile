@@ -1,4 +1,4 @@
-.PHONY: install run lint format type test check
+.PHONY: install run lint format type seed test check
 
 install:
 	pip install -e ".[dev]"
@@ -14,6 +14,9 @@ format:
 
 type:
 	mypy
+
+seed:
+	python scripts/seed.py
 
 test:
 	pytest

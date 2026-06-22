@@ -29,6 +29,11 @@ class UnauthorizedError(AppError):
     error_code = "UNAUTHORIZED"
 
 
+class UnsupportedFileError(AppError):
+    status_code = 400
+    error_code = "UNSUPPORTED_FILE_TYPE"
+
+
 def build_error_response(
     code: str,
     message: str,

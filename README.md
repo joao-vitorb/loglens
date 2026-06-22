@@ -87,6 +87,48 @@ The API will be available at `http://localhost:5000`.
 - Health check: `GET /health`
 - API docs (Swagger UI): `GET /docs`
 
+## API endpoints
+
+### Ingest logs (JSON)
+
+```
+POST /api/v1/logs
+Content-Type: application/json
+
+{
+  "entries": [
+    {
+      "timestamp": "2026-06-20T08:00:00",
+      "level": "error",
+      "source": "auth-service",
+      "message": "login failed"
+    }
+  ]
+}
+```
+
+### Ingest logs (file upload)
+
+```
+POST /api/v1/logs/upload
+Content-Type: multipart/form-data
+field: file = <a .log or .txt file>
+```
+
+Each line must follow the format `TIMESTAMP LEVEL SOURCE MESSAGE`, for example:
+
+```
+2026-06-20T08:00:00 ERROR auth-service login failed
+```
+
+Malformed or invalid lines are skipped and reported in the response.
+
+## Seed example data
+
+```bash
+python scripts/seed.py
+```
+
 ## Development
 
 ```bash
@@ -109,8 +151,14 @@ app/
   api/
     health.py        # health check endpoint
     v1/              # versioned API (/api/v1)
+  core/              # request and file upload validation
   models/            # SQLAlchemy models (LogEntry, AlertRule)
+  schemas/           # Pydantic schemas
+  repositories/      # data access layer
+  services/          # business logic (parsing, ingestion)
 migrations/          # Alembic migrations
+seeds/               # example log file
+scripts/             # helper scripts (seed)
 tests/               # PyTest suite
 docker-compose.yml   # PostgreSQL service
 wsgi.py              # WSGI entrypoint
