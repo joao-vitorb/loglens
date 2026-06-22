@@ -8,6 +8,9 @@ errors, occurrences per time window and threshold-based alerts.
 
 - Python 3.12
 - Flask (blueprints)
+- SQLAlchemy + Flask-SQLAlchemy
+- Alembic (database migrations)
+- PostgreSQL (SQLite for local development and tests)
 - Pydantic / pydantic-settings
 - structlog (structured logging)
 - flasgger (Swagger UI)
@@ -45,6 +48,33 @@ safe defaults for local development.
 | `LOGLENS_ENVIRONMENT` | `development` | Runtime environment |
 | `LOGLENS_DEBUG` | `false` | Enable debug mode |
 | `LOGLENS_LOG_LEVEL` | `INFO` | Logging level |
+| `LOGLENS_DATABASE_URL` | `sqlite:///loglens.db` | SQLAlchemy database URL |
+
+For PostgreSQL via Docker:
+
+```
+LOGLENS_DATABASE_URL=postgresql+psycopg://loglens:loglens@localhost:5432/loglens
+```
+
+## Database
+
+Start PostgreSQL with Docker:
+
+```bash
+docker compose up -d
+```
+
+Apply migrations:
+
+```bash
+alembic upgrade head
+```
+
+Create a new migration after changing models:
+
+```bash
+alembic revision --autogenerate -m "describe change"
+```
 
 ## Running
 
@@ -79,6 +109,9 @@ app/
   api/
     health.py        # health check endpoint
     v1/              # versioned API (/api/v1)
+  models/            # SQLAlchemy models (LogEntry, AlertRule)
+migrations/          # Alembic migrations
 tests/               # PyTest suite
+docker-compose.yml   # PostgreSQL service
 wsgi.py              # WSGI entrypoint
 ```

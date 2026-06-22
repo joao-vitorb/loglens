@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     debug: bool = False
     log_level: str = "INFO"
+    database_url: str = "sqlite:///loglens.db"
 
 
 @lru_cache
