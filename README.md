@@ -107,6 +107,25 @@ Content-Type: application/json
 }
 ```
 
+### List logs (filters and pagination)
+
+```
+GET /api/v1/logs?level=error&source=auth-service&start=2026-06-20T00:00:00&end=2026-06-21T00:00:00&page=1&page_size=20
+```
+
+Query parameters (all optional):
+
+| Param | Description |
+|-------|-------------|
+| `level` | Filter by level (`info`, `warn`, `error`) |
+| `source` | Filter by source |
+| `start` | Only entries with timestamp greater than or equal to this value |
+| `end` | Only entries with timestamp less than or equal to this value |
+| `page` | Page number (default `1`) |
+| `page_size` | Items per page (default `20`, max `100`) |
+
+Results are ordered by timestamp descending and include pagination metadata.
+
 ### Ingest logs (file upload)
 
 ```
