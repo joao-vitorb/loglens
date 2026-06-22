@@ -2,8 +2,9 @@ from flask import Blueprint, Response, jsonify, request
 
 from app.core.file_upload import read_log_file
 from app.core.validation import validate_payload
-from app.schemas.log import LogIngestionRequest
+from app.schemas.log import LogIngestionRequest, LogQueryParams
 from app.services.ingestion_service import build_ingestion_service
+from app.services.log_query_service import build_log_query_service
 
 logs_bp = Blueprint("logs", __name__)
 
@@ -75,3 +76,45 @@ def upload_logs() -> tuple[Response, int]:
     content = read_log_file(request.files.get("file"))
     result = build_ingestion_service().ingest_text(content)
     return jsonify(result.model_dump()), 201
+
+
+@logs_bp.get("/logs")
+def list_logs() -> tuple[Response, int]:
+    """
+    List log entries with optional filters and pagination.
+    ---
+    tags:
+      - Logs
+    parameters:
+      - in: query
+        name: level
+        type: string
+        enum: [info, warn, error]
+      - in: query
+        name: source
+        type: string
+      - in: query
+        name: start
+        type: string
+        format: date-time
+      - in: query
+        name: end
+        type: string
+        format: date-time
+      - in: query
+        name: page
+        type: integer
+        default: 1
+      - in: query
+        name: page_size
+        type: integer
+        default: 20
+    responses:
+      200:
+        description: A paginated list of log entries.
+      422:
+        description: Invalid query parameters.
+    """
+    params = validate_payload(LogQueryParams, request.args.to_dict())
+    result = build_log_query_service().query(params)
+    return jsonify(result.model_dump(mode="json")), 200

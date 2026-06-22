@@ -13,6 +13,13 @@ class LogLevel(StrEnum):
 LEVEL_ALIASES = {"warning": "warn", "err": "error"}
 
 
+def normalize_level_value(value: object) -> object:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        return LEVEL_ALIASES.get(normalized, normalized)
+    return value
+
+
 class LogEntryInput(BaseModel):
     timestamp: datetime
     level: LogLevel
@@ -22,10 +29,7 @@ class LogEntryInput(BaseModel):
     @field_validator("level", mode="before")
     @classmethod
     def normalize_level(cls, value: object) -> object:
-        if isinstance(value, str):
-            normalized = value.strip().lower()
-            return LEVEL_ALIASES.get(normalized, normalized)
-        return value
+        return normalize_level_value(value)
 
 
 class LogIngestionRequest(BaseModel):
@@ -52,3 +56,29 @@ class IngestionResult(BaseModel):
     ingested: int
     skipped: int
     errors: list[LineError] = Field(default_factory=list)
+
+
+class LogQueryParams(BaseModel):
+    level: LogLevel | None = None
+    source: str | None = Field(default=None, min_length=1, max_length=255)
+    start: datetime | None = None
+    end: datetime | None = None
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=20, ge=1, le=100)
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def normalize_level(cls, value: object) -> object:
+        return normalize_level_value(value)
+
+
+class PaginationMeta(BaseModel):
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+
+
+class PaginatedLogs(BaseModel):
+    items: list[LogEntryResponse]
+    pagination: PaginationMeta
