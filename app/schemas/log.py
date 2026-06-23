@@ -112,3 +112,43 @@ class LogSummary(BaseModel):
     counts_by_level: LevelCounts
     top_errors: list[TopError]
     time_window: TimeWindow
+
+
+class AlertRuleInput(BaseModel):
+    level: LogLevel
+    threshold: int = Field(ge=1)
+    window_minutes: int = Field(ge=1, le=1440)
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def normalize_level(cls, value: object) -> object:
+        return normalize_level_value(value)
+
+
+class AlertRuleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    level: LogLevel
+    threshold: int
+    window_minutes: int
+    created_at: datetime
+
+
+class AlertEvaluationParams(BaseModel):
+    at: datetime | None = None
+
+
+class TriggeredAlert(BaseModel):
+    rule_id: int
+    level: LogLevel
+    threshold: int
+    window_minutes: int
+    count: int
+    window_start: datetime
+    window_end: datetime
+
+
+class AlertEvaluation(BaseModel):
+    reference_time: datetime | None
+    triggered: list[TriggeredAlert]
