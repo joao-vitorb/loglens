@@ -2,9 +2,10 @@ from flask import Blueprint, Response, jsonify, request
 
 from app.core.file_upload import read_log_file
 from app.core.validation import validate_payload
-from app.schemas.log import LogIngestionRequest, LogQueryParams
+from app.schemas.log import LogIngestionRequest, LogQueryParams, SummaryQueryParams
 from app.services.ingestion_service import build_ingestion_service
 from app.services.log_query_service import build_log_query_service
+from app.services.summary_service import build_summary_service
 
 logs_bp = Blueprint("logs", __name__)
 
@@ -117,4 +118,38 @@ def list_logs() -> tuple[Response, int]:
     """
     params = validate_payload(LogQueryParams, request.args.to_dict())
     result = build_log_query_service().query(params)
+    return jsonify(result.model_dump(mode="json")), 200
+
+
+@logs_bp.get("/logs/summary")
+def summarize_logs() -> tuple[Response, int]:
+    """
+    Summarize log entries: counts by level, top errors and time window.
+    ---
+    tags:
+      - Logs
+    parameters:
+      - in: query
+        name: source
+        type: string
+      - in: query
+        name: start
+        type: string
+        format: date-time
+      - in: query
+        name: end
+        type: string
+        format: date-time
+      - in: query
+        name: top_errors
+        type: integer
+        default: 5
+    responses:
+      200:
+        description: A summary of the matching log entries.
+      422:
+        description: Invalid query parameters.
+    """
+    params = validate_payload(SummaryQueryParams, request.args.to_dict())
+    result = build_summary_service().summarize(params)
     return jsonify(result.model_dump(mode="json")), 200
