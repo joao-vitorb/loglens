@@ -40,6 +40,53 @@ class LogEntryRepository:
         items = list(db.session.scalars(items_statement))
         return items, total
 
+    def count_by_level(
+        self,
+        *,
+        source: str | None,
+        start: datetime | None,
+        end: datetime | None,
+    ) -> dict[str, int]:
+        conditions = self._build_conditions(None, source, start, end)
+        statement = select(LogEntry.level, func.count()).group_by(LogEntry.level)
+        if conditions:
+            statement = statement.where(*conditions)
+        rows = db.session.execute(statement).all()
+        return {level: count for level, count in rows}
+
+    def top_error_messages(
+        self,
+        *,
+        source: str | None,
+        start: datetime | None,
+        end: datetime | None,
+        limit: int,
+    ) -> list[tuple[str, int]]:
+        conditions = self._build_conditions("error", source, start, end)
+        statement = (
+            select(LogEntry.message, func.count().label("occurrences"))
+            .where(*conditions)
+            .group_by(LogEntry.message)
+            .order_by(func.count().desc(), LogEntry.message)
+            .limit(limit)
+        )
+        rows = db.session.execute(statement).all()
+        return [(message, count) for message, count in rows]
+
+    def time_window(
+        self,
+        *,
+        source: str | None,
+        start: datetime | None,
+        end: datetime | None,
+    ) -> tuple[datetime | None, datetime | None]:
+        conditions = self._build_conditions(None, source, start, end)
+        statement = select(func.min(LogEntry.timestamp), func.max(LogEntry.timestamp))
+        if conditions:
+            statement = statement.where(*conditions)
+        earliest, latest = db.session.execute(statement).one()
+        return earliest, latest
+
     def _build_conditions(
         self,
         level: str | None,

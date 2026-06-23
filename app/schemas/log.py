@@ -82,3 +82,33 @@ class PaginationMeta(BaseModel):
 class PaginatedLogs(BaseModel):
     items: list[LogEntryResponse]
     pagination: PaginationMeta
+
+
+class SummaryQueryParams(BaseModel):
+    source: str | None = Field(default=None, min_length=1, max_length=255)
+    start: datetime | None = None
+    end: datetime | None = None
+    top_errors: int = Field(default=5, ge=1, le=50)
+
+
+class LevelCounts(BaseModel):
+    info: int = 0
+    warn: int = 0
+    error: int = 0
+
+
+class TopError(BaseModel):
+    message: str
+    count: int
+
+
+class TimeWindow(BaseModel):
+    start: datetime | None
+    end: datetime | None
+
+
+class LogSummary(BaseModel):
+    total: int
+    counts_by_level: LevelCounts
+    top_errors: list[TopError]
+    time_window: TimeWindow

@@ -126,6 +126,22 @@ Query parameters (all optional):
 
 Results are ordered by timestamp descending and include pagination metadata.
 
+### Summarize logs
+
+```
+GET /api/v1/logs/summary?source=auth-service&start=2026-06-20T00:00:00&end=2026-06-21T00:00:00&top_errors=5
+```
+
+Returns counts by level, the most frequent error messages and the time window
+covered by the matching entries. Query parameters (all optional):
+
+| Param | Description |
+|-------|-------------|
+| `source` | Filter by source |
+| `start` | Only entries with timestamp greater than or equal to this value |
+| `end` | Only entries with timestamp less than or equal to this value |
+| `top_errors` | Number of top error messages to return (default `5`, max `50`) |
+
 ### Ingest logs (file upload)
 
 ```
