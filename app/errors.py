@@ -34,6 +34,11 @@ class UnsupportedFileError(AppError):
     error_code = "UNSUPPORTED_FILE_TYPE"
 
 
+class WebhookError(AppError):
+    status_code = 502
+    error_code = "WEBHOOK_DELIVERY_FAILED"
+
+
 def build_error_response(
     code: str,
     message: str,

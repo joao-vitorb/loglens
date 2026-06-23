@@ -152,3 +152,9 @@ class TriggeredAlert(BaseModel):
 class AlertEvaluation(BaseModel):
     reference_time: datetime | None
     triggered: list[TriggeredAlert]
+
+
+class AlertNotification(BaseModel):
+    reference_time: datetime | None
+    triggered: list[TriggeredAlert]
+    delivered: bool

@@ -2,6 +2,7 @@ from flask import Blueprint, Response, jsonify, request
 
 from app.core.validation import validate_payload
 from app.schemas.log import AlertEvaluationParams, AlertRuleInput, AlertRuleResponse
+from app.services.alert_notification_service import build_alert_notification_service
 from app.services.alert_service import build_alert_service
 
 alerts_bp = Blueprint("alerts", __name__)
@@ -79,3 +80,29 @@ def list_triggered_alerts() -> tuple[Response, int]:
     params = validate_payload(AlertEvaluationParams, request.args.to_dict())
     evaluation = build_alert_service().evaluate(params)
     return jsonify(evaluation.model_dump(mode="json")), 200
+
+
+@alerts_bp.post("/alerts/notify")
+def notify_triggered_alerts() -> tuple[Response, int]:
+    """
+    Evaluate alert rules and deliver triggered alerts to the configured webhook.
+    ---
+    tags:
+      - Alerts
+    parameters:
+      - in: query
+        name: at
+        type: string
+        format: date-time
+        description: Reference time for evaluation (defaults to the latest log timestamp).
+    responses:
+      200:
+        description: The triggered alerts and whether they were delivered.
+      422:
+        description: Invalid query parameters.
+      502:
+        description: The webhook delivery failed.
+    """
+    params = validate_payload(AlertEvaluationParams, request.args.to_dict())
+    result = build_alert_notification_service().notify(params)
+    return jsonify(result.model_dump(mode="json")), 200
