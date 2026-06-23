@@ -49,6 +49,8 @@ safe defaults for local development.
 | `LOGLENS_DEBUG` | `false` | Enable debug mode |
 | `LOGLENS_LOG_LEVEL` | `INFO` | Logging level |
 | `LOGLENS_DATABASE_URL` | `sqlite:///loglens.db` | SQLAlchemy database URL |
+| `LOGLENS_ALERT_WEBHOOK_URL` | _(none)_ | Webhook URL to deliver triggered alerts |
+| `LOGLENS_ALERT_WEBHOOK_TIMEOUT_SECONDS` | `5.0` | Webhook request timeout |
 
 For PostgreSQL via Docker:
 
@@ -183,6 +185,16 @@ GET /api/v1/alerts/triggered
 
 The evaluation counts entries per level inside each rule's window. The reference
 time defaults to the latest log timestamp and can be overridden with `?at=<date-time>`.
+
+Evaluate and deliver triggered alerts to the configured webhook:
+
+```
+POST /api/v1/alerts/notify
+```
+
+When `LOGLENS_ALERT_WEBHOOK_URL` is set and there are triggered alerts, the
+evaluation payload is delivered to that URL via HTTP POST. The response reports
+whether it was `delivered`. A delivery failure returns `502`.
 
 ## Seed example data
 
