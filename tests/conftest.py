@@ -16,6 +16,7 @@ def app() -> Iterator[Flask]:
         debug=True,
         log_level="WARNING",
         database_url="sqlite:///:memory:",
+        rate_limit_enabled=False,
     )
     application = create_app(settings)
     application.config.update(TESTING=True)

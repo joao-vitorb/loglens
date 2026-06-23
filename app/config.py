@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 5 * 1024 * 1024
     alert_webhook_url: str | None = None
     alert_webhook_timeout_seconds: float = 5.0
+    api_key: str | None = None
+    redis_url: str | None = None
+    summary_cache_ttl_seconds: int = 60
+    ingestion_rate_limit: str = "60/minute"
+    rate_limit_enabled: bool = True
 
 
 @lru_cache
