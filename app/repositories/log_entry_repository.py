@@ -87,6 +87,21 @@ class LogEntryRepository:
         earliest, latest = db.session.execute(statement).one()
         return earliest, latest
 
+    def latest_timestamp(self) -> datetime | None:
+        return db.session.scalar(select(func.max(LogEntry.timestamp)))
+
+    def count_in_window(self, *, level: str, start: datetime, end: datetime) -> int:
+        statement = (
+            select(func.count())
+            .select_from(LogEntry)
+            .where(
+                LogEntry.level == level,
+                LogEntry.timestamp >= start,
+                LogEntry.timestamp <= end,
+            )
+        )
+        return db.session.scalar(statement) or 0
+
     def _build_conditions(
         self,
         level: str | None,

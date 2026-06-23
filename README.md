@@ -158,6 +158,32 @@ Each line must follow the format `TIMESTAMP LEVEL SOURCE MESSAGE`, for example:
 
 Malformed or invalid lines are skipped and reported in the response.
 
+### Alert rules
+
+Create a rule (triggers when a level reaches a threshold within a time window):
+
+```
+POST /api/v1/alerts
+Content-Type: application/json
+
+{ "level": "error", "threshold": 5, "window_minutes": 10 }
+```
+
+List rules:
+
+```
+GET /api/v1/alerts
+```
+
+Evaluate which rules are currently triggered:
+
+```
+GET /api/v1/alerts/triggered
+```
+
+The evaluation counts entries per level inside each rule's window. The reference
+time defaults to the latest log timestamp and can be overridden with `?at=<date-time>`.
+
 ## Seed example data
 
 ```bash
