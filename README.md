@@ -51,6 +51,11 @@ safe defaults for local development.
 | `LOGLENS_DATABASE_URL` | `sqlite:///loglens.db` | SQLAlchemy database URL |
 | `LOGLENS_ALERT_WEBHOOK_URL` | _(none)_ | Webhook URL to deliver triggered alerts |
 | `LOGLENS_ALERT_WEBHOOK_TIMEOUT_SECONDS` | `5.0` | Webhook request timeout |
+| `LOGLENS_API_KEY` | _(none)_ | When set, `/api/*` requires the `X-API-Key` header |
+| `LOGLENS_REDIS_URL` | _(none)_ | Redis URL for summary cache and rate limit storage |
+| `LOGLENS_SUMMARY_CACHE_TTL_SECONDS` | `60` | Summary cache TTL |
+| `LOGLENS_INGESTION_RATE_LIMIT` | `60/minute` | Rate limit for ingestion endpoints |
+| `LOGLENS_RATE_LIMIT_ENABLED` | `true` | Enable or disable rate limiting |
 
 For PostgreSQL via Docker:
 
@@ -88,6 +93,19 @@ The API will be available at `http://localhost:5000`.
 
 - Health check: `GET /health`
 - API docs (Swagger UI): `GET /docs`
+
+## Authentication
+
+When `LOGLENS_API_KEY` is set, every `/api/*` request must include the API key
+in the `X-API-Key` header. `/health` and `/docs` stay public. If the variable is
+not set, authentication is disabled (useful for local development).
+
+## Caching and rate limiting
+
+When `LOGLENS_REDIS_URL` is set, summary responses are cached in Redis (TTL from
+`LOGLENS_SUMMARY_CACHE_TTL_SECONDS`) and invalidated whenever new logs are
+ingested. Ingestion endpoints are rate limited (`LOGLENS_INGESTION_RATE_LIMIT`);
+without Redis the limiter falls back to in-memory storage.
 
 ## API endpoints
 
