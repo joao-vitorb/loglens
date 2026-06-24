@@ -4,6 +4,34 @@ REST microservice for log analysis. It ingests logs (JSON or file upload),
 parses the entries and returns summaries and alerts: counts by level, top
 errors, occurrences per time window and threshold-based alerts.
 
+## Table of contents
+
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Setup](#setup)
+- [Configuration](#configuration)
+- [Database](#database)
+- [Running](#running)
+- [Authentication](#authentication)
+- [Caching and rate limiting](#caching-and-rate-limiting)
+- [Metrics](#metrics)
+- [Error format](#error-format)
+- [API endpoints](#api-endpoints)
+- [Seed example data](#seed-example-data)
+- [Development](#development)
+- [Project structure](#project-structure)
+
+## Features
+
+- Log ingestion via JSON and via `.log` / `.txt` file upload
+- Line parsing with reporting of malformed and invalid entries
+- Listing with filters (level, source, time range) and pagination
+- Summaries: counts by level, top error messages and time window
+- Threshold-based alert rules with evaluation and webhook delivery
+- API key authentication, Redis summary cache and ingestion rate limiting
+- Prometheus metrics and Swagger documentation
+
 ## Tech stack
 
 - Python 3.12
@@ -12,16 +40,27 @@ errors, occurrences per time window and threshold-based alerts.
 - Alembic (database migrations)
 - PostgreSQL (SQLite for local development and tests)
 - Pydantic / pydantic-settings
+- Redis (cache) and Flask-Limiter (rate limiting)
 - structlog (structured logging)
+- prometheus-client (metrics)
 - flasgger (Swagger UI)
 - Ruff, mypy, pre-commit
 - PyTest
 
-## Requirements
+## Architecture
 
-- Python 3.12 or newer
+The code is organized in clear layers, each with a single responsibility:
+
+- **Routes** (`app/api`): HTTP handling and request/response shaping.
+- **Schemas** (`app/schemas`): Pydantic models for input and output validation.
+- **Services** (`app/services`): business logic (parsing, ingestion, summaries, alerts).
+- **Repositories** (`app/repositories`): database access with SQLAlchemy.
+- **Models** (`app/models`): SQLAlchemy ORM entities.
+- **Core** (`app/core`): cross-cutting concerns (auth, validation, caching, uploads).
 
 ## Setup
+
+Requires Python 3.12 or newer.
 
 ```bash
 python -m venv .venv
@@ -49,6 +88,7 @@ safe defaults for local development.
 | `LOGLENS_DEBUG` | `false` | Enable debug mode |
 | `LOGLENS_LOG_LEVEL` | `INFO` | Logging level |
 | `LOGLENS_DATABASE_URL` | `sqlite:///loglens.db` | SQLAlchemy database URL |
+| `LOGLENS_MAX_UPLOAD_BYTES` | `5242880` | Maximum upload size in bytes |
 | `LOGLENS_ALERT_WEBHOOK_URL` | _(none)_ | Webhook URL to deliver triggered alerts |
 | `LOGLENS_ALERT_WEBHOOK_TIMEOUT_SECONDS` | `5.0` | Webhook request timeout |
 | `LOGLENS_API_KEY` | _(none)_ | When set, `/api/*` requires the `X-API-Key` header |
@@ -65,7 +105,7 @@ LOGLENS_DATABASE_URL=postgresql+psycopg://loglens:loglens@localhost:5432/loglens
 
 ## Database
 
-Start PostgreSQL with Docker:
+Start PostgreSQL and Redis with Docker:
 
 ```bash
 docker compose up -d
@@ -98,8 +138,10 @@ The API will be available at `http://localhost:5000`.
 ## Authentication
 
 When `LOGLENS_API_KEY` is set, every `/api/*` request must include the API key
-in the `X-API-Key` header. `/health` and `/docs` stay public. If the variable is
-not set, authentication is disabled (useful for local development).
+in the `X-API-Key` header. `/health`, `/docs` and `/metrics` stay public. If the
+variable is not set, authentication is disabled (useful for local development).
+
+In the Swagger UI, use the **Authorize** button to set the API key.
 
 ## Caching and rate limiting
 
@@ -113,6 +155,24 @@ without Redis the limiter falls back to in-memory storage.
 `GET /metrics` exposes Prometheus-formatted metrics (public, like `/health`):
 HTTP request counts and latency per endpoint, total ingested log entries and
 total triggered alerts.
+
+## Error format
+
+Errors share a consistent JSON structure with an internal `code`:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request data.",
+    "details": [{ "field": "page_size", "message": "Input should be less than or equal to 100" }]
+  }
+}
+```
+
+Common status codes: `400` (unsupported file type), `401` (missing/invalid API
+key), `413` (upload too large), `422` (validation), `429` (rate limit) and `502`
+(webhook delivery failed).
 
 ## API endpoints
 
@@ -133,6 +193,22 @@ Content-Type: application/json
   ]
 }
 ```
+
+### Ingest logs (file upload)
+
+```
+POST /api/v1/logs/upload
+Content-Type: multipart/form-data
+field: file = <a .log or .txt file>
+```
+
+Each line must follow the format `TIMESTAMP LEVEL SOURCE MESSAGE`, for example:
+
+```
+2026-06-20T08:00:00 ERROR auth-service login failed
+```
+
+Malformed or invalid lines are skipped and reported in the response.
 
 ### List logs (filters and pagination)
 
@@ -168,22 +244,6 @@ covered by the matching entries. Query parameters (all optional):
 | `start` | Only entries with timestamp greater than or equal to this value |
 | `end` | Only entries with timestamp less than or equal to this value |
 | `top_errors` | Number of top error messages to return (default `5`, max `50`) |
-
-### Ingest logs (file upload)
-
-```
-POST /api/v1/logs/upload
-Content-Type: multipart/form-data
-field: file = <a .log or .txt file>
-```
-
-Each line must follow the format `TIMESTAMP LEVEL SOURCE MESSAGE`, for example:
-
-```
-2026-06-20T08:00:00 ERROR auth-service login failed
-```
-
-Malformed or invalid lines are skipped and reported in the response.
 
 ### Alert rules
 
@@ -247,22 +307,22 @@ and coverage is enforced at a minimum of 95% (`pytest --cov=app`).
 app/
   __init__.py        # application factory
   config.py          # environment-based settings
-  extensions.py      # Swagger setup
+  extensions.py      # db, limiter, redis and Swagger setup
   errors.py          # consistent error handling
   logging_config.py  # structured logging
   api/
     health.py        # health check endpoint
     v1/              # versioned API (/api/v1)
-  core/              # request and file upload validation
+  core/              # auth, validation, caching and file uploads
   models/            # SQLAlchemy models (LogEntry, AlertRule)
   schemas/           # Pydantic schemas
   repositories/      # data access layer
-  services/          # business logic (parsing, ingestion)
+  services/          # business logic (parsing, ingestion, summary, alerts)
   observability/     # Prometheus metrics
 migrations/          # Alembic migrations
 seeds/               # example log file
 scripts/             # helper scripts (seed)
 tests/               # PyTest suite
-docker-compose.yml   # PostgreSQL service
+docker-compose.yml   # PostgreSQL and Redis services
 wsgi.py              # WSGI entrypoint
 ```

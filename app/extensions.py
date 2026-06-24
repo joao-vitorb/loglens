@@ -27,9 +27,23 @@ def init_limiter(app: Flask, settings: Settings) -> None:
 swagger_template = {
     "info": {
         "title": "LogLens API",
-        "description": "REST microservice for log analysis.",
+        "description": "REST microservice for log analysis: ingestion, querying, "
+        "summaries and threshold-based alerts.",
         "version": "1.0.0",
-    }
+    },
+    "tags": [
+        {"name": "Health", "description": "Service health."},
+        {"name": "Logs", "description": "Ingest, query and summarize log entries."},
+        {"name": "Alerts", "description": "Manage and evaluate alert rules."},
+    ],
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header",
+        }
+    },
+    "security": [{"ApiKeyAuth": []}],
 }
 
 swagger_config = {
