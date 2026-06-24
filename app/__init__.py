@@ -9,6 +9,7 @@ from app.core.cache import SummaryCache
 from app.errors import register_error_handlers
 from app.extensions import build_redis_client, db, init_limiter, init_swagger
 from app.logging_config import configure_logging
+from app.observability.metrics import register_metrics
 
 
 def create_app(settings: Settings | None = None) -> Flask:
@@ -28,6 +29,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     init_limiter(app, settings)
     init_swagger(app)
     register_error_handlers(app)
+    register_metrics(app)
     register_authentication(app)
     app.register_blueprint(health_bp)
     app.register_blueprint(api_v1)

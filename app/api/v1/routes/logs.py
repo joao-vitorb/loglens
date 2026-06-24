@@ -5,6 +5,7 @@ from app.core.cache import SummaryCache, build_summary_key
 from app.core.file_upload import read_log_file
 from app.core.validation import validate_payload
 from app.extensions import limiter
+from app.observability.metrics import LOG_ENTRIES_INGESTED
 from app.schemas.log import LogIngestionRequest, LogQueryParams, SummaryQueryParams
 from app.services.ingestion_service import build_ingestion_service
 from app.services.log_query_service import build_log_query_service
@@ -63,6 +64,7 @@ def ingest_logs() -> tuple[Response, int]:
     """
     data = validate_payload(LogIngestionRequest, request.get_json(silent=True))
     result = build_ingestion_service().ingest_entries(data.entries)
+    LOG_ENTRIES_INGESTED.inc(result.ingested)
     summary_cache().invalidate()
     return jsonify(result.model_dump()), 201
 
@@ -92,6 +94,7 @@ def upload_logs() -> tuple[Response, int]:
     """
     content = read_log_file(request.files.get("file"))
     result = build_ingestion_service().ingest_text(content)
+    LOG_ENTRIES_INGESTED.inc(result.ingested)
     summary_cache().invalidate()
     return jsonify(result.model_dump()), 201
 

@@ -93,6 +93,7 @@ The API will be available at `http://localhost:5000`.
 
 - Health check: `GET /health`
 - API docs (Swagger UI): `GET /docs`
+- Metrics (Prometheus): `GET /metrics`
 
 ## Authentication
 
@@ -106,6 +107,12 @@ When `LOGLENS_REDIS_URL` is set, summary responses are cached in Redis (TTL from
 `LOGLENS_SUMMARY_CACHE_TTL_SECONDS`) and invalidated whenever new logs are
 ingested. Ingestion endpoints are rate limited (`LOGLENS_INGESTION_RATE_LIMIT`);
 without Redis the limiter falls back to in-memory storage.
+
+## Metrics
+
+`GET /metrics` exposes Prometheus-formatted metrics (public, like `/health`):
+HTTP request counts and latency per endpoint, total ingested log entries and
+total triggered alerts.
 
 ## API endpoints
 
@@ -247,6 +254,7 @@ app/
   schemas/           # Pydantic schemas
   repositories/      # data access layer
   services/          # business logic (parsing, ingestion)
+  observability/     # Prometheus metrics
 migrations/          # Alembic migrations
 seeds/               # example log file
 scripts/             # helper scripts (seed)

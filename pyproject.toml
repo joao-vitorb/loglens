@@ -17,6 +17,7 @@ dependencies = [
     "requests>=2.31",
     "redis>=5.0",
     "flask-limiter>=3.5",
+    "prometheus-client>=0.20",
 ]
 
 [project.optional-dependencies]
