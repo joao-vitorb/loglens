@@ -1,6 +1,7 @@
 from flask import Blueprint, Response, jsonify, request
 
 from app.core.validation import validate_payload
+from app.observability.metrics import ALERTS_TRIGGERED
 from app.schemas.log import AlertEvaluationParams, AlertRuleInput, AlertRuleResponse
 from app.services.alert_notification_service import build_alert_notification_service
 from app.services.alert_service import build_alert_service
@@ -79,6 +80,7 @@ def list_triggered_alerts() -> tuple[Response, int]:
     """
     params = validate_payload(AlertEvaluationParams, request.args.to_dict())
     evaluation = build_alert_service().evaluate(params)
+    ALERTS_TRIGGERED.inc(len(evaluation.triggered))
     return jsonify(evaluation.model_dump(mode="json")), 200
 
 
