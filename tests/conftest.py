@@ -24,7 +24,9 @@ def app() -> Iterator[Flask]:
     with application.app_context():
         db.create_all()
         yield application
+        db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-.PHONY: install run lint format type seed test check
+.PHONY: install run lint format type seed test coverage check
 
 install:
 	pip install -e ".[dev]"
@@ -20,5 +20,8 @@ seed:
 
 test:
 	pytest
+
+coverage:
+	pytest --cov=app
 
 check: lint type test

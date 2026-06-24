@@ -33,4 +33,4 @@ jobs:
         run: mypy
 
       - name: Run tests
-        run: pytest
+        run: pytest --cov=app

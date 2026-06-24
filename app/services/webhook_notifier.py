@@ -10,9 +10,6 @@ class WebhookNotifier:
         self._url = url
         self._timeout_seconds = timeout_seconds
 
-    def is_enabled(self) -> bool:
-        return bool(self._url)
-
     def notify(self, payload: dict[str, Any]) -> bool:
         if not self._url:
             return False

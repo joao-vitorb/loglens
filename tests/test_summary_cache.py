@@ -42,7 +42,9 @@ def cached_app() -> Iterator[Flask]:
         db.create_all()
         application.config["SUMMARY_CACHE"] = SummaryCache(FakeRedis(), ttl_seconds=60)  # type: ignore[arg-type]
         yield application
+        db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
 
 def add_error(timestamp: datetime) -> None:

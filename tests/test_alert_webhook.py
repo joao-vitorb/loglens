@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
@@ -21,7 +22,8 @@ class FakeResponse:
             raise requests.HTTPError(f"status {self.status_code}")
 
 
-def build_app(webhook_url: str | None) -> Flask:
+@contextmanager
+def running_app(webhook_url: str | None) -> Iterator[Flask]:
     settings = Settings(
         environment="testing",
         database_url="sqlite:///:memory:",
@@ -29,7 +31,14 @@ def build_app(webhook_url: str | None) -> Flask:
     )
     application = create_app(settings)
     application.config.update(TESTING=True)
-    return application
+    with application.app_context():
+        db.create_all()
+        try:
+            yield application
+        finally:
+            db.session.remove()
+            db.drop_all()
+            db.engine.dispose()
 
 
 def seed_rule_and_errors(application: Flask) -> None:
@@ -68,11 +77,8 @@ def captured_posts(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
 def test_notify_delivers_to_webhook_when_triggered(
     captured_posts: list[dict[str, Any]],
 ) -> None:
-    application = build_app("http://hook.test/alerts")
-    with application.app_context():
-        db.create_all()
+    with running_app("http://hook.test/alerts") as application:
         seed_rule_and_errors(application)
-
         body = application.test_client().post("/api/v1/alerts/notify").get_json()
 
     assert body["delivered"] is True
@@ -85,11 +91,8 @@ def test_notify_delivers_to_webhook_when_triggered(
 def test_notify_does_not_deliver_without_webhook_configured(
     captured_posts: list[dict[str, Any]],
 ) -> None:
-    application = build_app(None)
-    with application.app_context():
-        db.create_all()
+    with running_app(None) as application:
         seed_rule_and_errors(application)
-
         body = application.test_client().post("/api/v1/alerts/notify").get_json()
 
     assert body["delivered"] is False
@@ -100,10 +103,7 @@ def test_notify_does_not_deliver_without_webhook_configured(
 def test_notify_does_not_deliver_when_nothing_triggered(
     captured_posts: list[dict[str, Any]],
 ) -> None:
-    application = build_app("http://hook.test/alerts")
-    with application.app_context():
-        db.create_all()
-
+    with running_app("http://hook.test/alerts") as application:
         body = application.test_client().post("/api/v1/alerts/notify").get_json()
 
     assert body["delivered"] is False
@@ -121,11 +121,8 @@ def failing_post(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
 
 def test_notify_returns_502_when_webhook_fails(failing_post: None) -> None:
-    application = build_app("http://hook.test/alerts")
-    with application.app_context():
-        db.create_all()
+    with running_app("http://hook.test/alerts") as application:
         seed_rule_and_errors(application)
-
         response = application.test_client().post("/api/v1/alerts/notify")
         body = response.get_json()
 
