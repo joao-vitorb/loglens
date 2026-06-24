@@ -20,7 +20,9 @@ def secured_app() -> Iterator[Flask]:
     with application.app_context():
         db.create_all()
         yield application
+        db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
 
 def test_request_without_api_key_is_rejected(secured_app: Flask) -> None:

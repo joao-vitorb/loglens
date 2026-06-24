@@ -230,12 +230,16 @@ python scripts/seed.py
 ## Development
 
 ```bash
-make lint     # ruff check
-make format   # ruff format
-make type     # mypy
-make test     # pytest
-make check    # lint + type + test
+make lint      # ruff check
+make format    # ruff format
+make type      # mypy
+make test      # pytest
+make coverage  # pytest with coverage report (fails under 95%)
+make check     # lint + type + test
 ```
+
+The test suite covers the API endpoints, services, repositories and edge cases,
+and coverage is enforced at a minimum of 95% (`pytest --cov=app`).
 
 ## Project structure
 
