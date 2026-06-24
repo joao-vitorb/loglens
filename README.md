@@ -1,11 +1,68 @@
 # LogLens
 
-REST microservice for log analysis. It ingests logs (JSON or file upload),
-parses the entries and returns summaries and alerts: counts by level, top
-errors, occurrences per time window and threshold-based alerts.
+LogLens is a REST microservice for **log analysis**, inspired by the day-to-day
+of N1/NOC monitoring teams. It ingests logs (as JSON or uploaded `.log` / `.txt`
+files), parses them and exposes summaries and threshold-based alerts: counts by
+level, top errors, occurrences per time window, and alerts delivered to a webhook.
+
+It is a backend-focused portfolio project that demonstrates a clean, layered
+architecture with Python and Flask: input validation, persistence and migrations,
+caching, authentication, rate limiting, metrics, automated tests (100% coverage),
+CI and containerized deployment.
+
+## Quickstart
+
+### Option A — Docker (recommended, one command)
+
+```bash
+docker compose up -d --build
+```
+
+The API starts at `http://localhost:8000` and applies database migrations
+automatically. Check it and open the interactive docs:
+
+```bash
+curl http://localhost:8000/health        # {"status":"ok"}
+```
+
+Then browse the Swagger UI at `http://localhost:8000/docs`.
+
+> If port `5432` or `6379` is already in use on your machine, stop the local
+> PostgreSQL/Redis or change the published ports in `docker-compose.yml`.
+
+### Option B — Local (Python + SQLite, no Docker)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+python scripts/seed.py             # creates the SQLite database and loads sample logs
+flask --app wsgi run               # API at http://localhost:5000
+```
+
+Try a request against the seeded data:
+
+```bash
+curl "http://localhost:5000/api/v1/logs/summary"
+```
+
+```json
+{
+  "total": 10,
+  "counts_by_level": { "info": 4, "warn": 2, "error": 4 },
+  "top_errors": [
+    { "message": "Login failed for user 17", "count": 2 },
+    { "message": "Payment gateway timeout", "count": 2 }
+  ],
+  "time_window": { "start": "2026-06-20T08:00:01", "end": "2026-06-20T08:07:55" }
+}
+```
+
+The sections below cover configuration, every endpoint and the full setup in detail.
 
 ## Table of contents
 
+- [Quickstart](#quickstart)
 - [Features](#features)
 - [Tech stack](#tech-stack)
 - [Architecture](#architecture)
@@ -20,6 +77,7 @@ errors, occurrences per time window and threshold-based alerts.
 - [API endpoints](#api-endpoints)
 - [Seed example data](#seed-example-data)
 - [Development](#development)
+- [Deployment](#deployment)
 - [Project structure](#project-structure)
 
 ## Features
@@ -105,15 +163,14 @@ LOGLENS_DATABASE_URL=postgresql+psycopg://loglens:loglens@localhost:5432/loglens
 
 ## Database
 
-Start PostgreSQL and Redis with Docker:
+For local development with SQLite, the database is created automatically by
+`python scripts/seed.py` (or by the app), so no extra step is needed.
+
+To use PostgreSQL, start just the infrastructure services and point the app at it:
 
 ```bash
-docker compose up -d
-```
-
-Apply migrations:
-
-```bash
+docker compose up -d postgres redis
+export LOGLENS_DATABASE_URL=postgresql+psycopg://loglens:loglens@localhost:5432/loglens
 alembic upgrade head
 ```
 
@@ -301,6 +358,21 @@ make check     # lint + type + test
 The test suite covers the API endpoints, services, repositories and edge cases,
 and coverage is enforced at a minimum of 95% (`pytest --cov=app`).
 
+## Deployment
+
+The application ships with a production `Dockerfile` (served by gunicorn) and a
+`docker-compose.yml` that runs the full stack (API + PostgreSQL + Redis).
+
+```bash
+docker compose up -d --build
+```
+
+The API is served at `http://localhost:8000`. On startup the container applies
+database migrations (`alembic upgrade head`) automatically. The `api` service
+connects to PostgreSQL and Redis over the internal Docker network; set
+`LOGLENS_API_KEY` (and any other variable) in the `api` service environment to
+configure it for production.
+
 ## Project structure
 
 ```
@@ -323,6 +395,8 @@ migrations/          # Alembic migrations
 seeds/               # example log file
 scripts/             # helper scripts (seed)
 tests/               # PyTest suite
-docker-compose.yml   # PostgreSQL and Redis services
+docker/              # container entrypoint
+Dockerfile           # production image (gunicorn)
+docker-compose.yml   # API, PostgreSQL and Redis services
 wsgi.py              # WSGI entrypoint
 ```
