@@ -1,5 +1,10 @@
 # LogLens
 
+[![CI](https://github.com/joao-vitorb/loglens/actions/workflows/ci.yml/badge.svg)](https://github.com/joao-vitorb/loglens/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 LogLens is a REST microservice for **log analysis**, inspired by the day-to-day
 of N1/NOC monitoring teams. It ingests logs (as JSON or uploaded `.log` / `.txt`
 files), parses them and exposes summaries and threshold-based alerts: counts by
@@ -60,9 +65,16 @@ curl "http://localhost:5000/api/v1/logs/summary"
 
 The sections below cover configuration, every endpoint and the full setup in detail.
 
+## Screenshots
+
+Interactive API documentation (Swagger UI) at `/docs`:
+
+![Swagger UI](assets/swagger.png)
+
 ## Table of contents
 
 - [Quickstart](#quickstart)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Tech stack](#tech-stack)
 - [Architecture](#architecture)
